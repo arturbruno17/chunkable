@@ -1,13 +1,12 @@
 <?php
 
-namespace Arturbruno17\LaravelChunkUpload\Requests;
+namespace Posart\Chunkable\Requests;
 
-use Arturbruno17\LaravelChunkUpload\Exceptions\ChunkUploadPayloadException;
+use Posart\Chunkable\Exceptions\ChunkUploadPayloadException;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rules\File;
 use Illuminate\Validation\ValidationException;
 use \Symfony\Component\HttpFoundation\File\File as MovedFile;
 

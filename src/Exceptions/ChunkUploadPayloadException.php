@@ -1,9 +1,8 @@
 <?php
 
-namespace Arturbruno17\LaravelChunkUpload\Exceptions;
+namespace Posart\Chunkable\Exceptions;
 
 use Illuminate\Validation\ValidationException;
-use Throwable;
 
 class ChunkUploadPayloadException extends ValidationException
 {
