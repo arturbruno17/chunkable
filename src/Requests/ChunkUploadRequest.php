@@ -9,10 +9,10 @@ use Posart\Chunkable\UnchunkedFile;
 class ChunkUploadRequest
 {
     public Request $request;
-    public ?ChunkedFile $chunk;
+    public ChunkedFile $chunk;
     public ?UnchunkedFile $finalFile;
 
-    public function __construct(Request $request, ?ChunkedFile $chunk, ?UnchunkedFile $finalFile)
+    public function __construct(Request $request, ChunkedFile $chunk, ?UnchunkedFile $finalFile)
     {
         $this->request = $request;
         $this->chunk = $chunk;

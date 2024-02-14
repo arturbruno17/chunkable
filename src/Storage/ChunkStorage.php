@@ -3,57 +3,64 @@
 namespace Posart\Chunkable\Storage;
 
 use Illuminate\Contracts\Filesystem\Filesystem;
+use Illuminate\Support\Facades\Log;
 use Posart\Chunkable\ChunkedFile;
 use Posart\Chunkable\UnchunkedFile;
 
-class ChunkStorage implements AbstractStorage
+class ChunkStorage extends AbstractStorage
 {
-    private Filesystem $disk;
+    protected Filesystem $disk;
+    private const STORAGE_PREFIX = 'chunkable';
 
     public function __construct(Filesystem $disk)
     {
         $this->disk = $disk;
     }
 
-
-    public function storageChunkedFile(ChunkedFile $chunkedFile): bool
+    public function storageChunkedFile(ChunkedFile $chunkedFile): ChunkedFile|bool
     {
-        return $this->disk->put($chunkedFile->getPath(), $chunkedFile);
+        $diskPath = self::STORAGE_PREFIX . "/{$chunkedFile->getFileUniqueIdentifier()}";
+        $diskFilename = "{$chunkedFile->getFileUniqueIdentifier()}_{$chunkedFile->getChunkPart()}_{$chunkedFile->getParts()}";
+        $diskFullPath = $diskPath . '/' . $diskFilename . "." . ChunkedFile::CHUNKED_FILE_EXTENSION;
+        if (!$this->disk->put($diskFullPath, fopen($chunkedFile->getFullPath(), 'r'))) return false;
+
+        return new ChunkedFile(
+            $chunkedFile->getFileUniqueIdentifier(),
+            $chunkedFile->getChunkPart(), $chunkedFile->getParts(),
+            $diskPath, $diskFilename,
+            $this->disk
+        );
     }
 
-    public function joinChunkedFiles(array $files): UnchunkedFile
+    public function joinChunkedFiles(array $paths, string $fileUniqueIdentifier, string $fileExtension): UnchunkedFile
     {
-        /** @var ChunkedFile $firstFile */
-        $firstFile = $files[0];
-        $fullPath = "{$firstFile->getPath()}/{$firstFile->getFileUniqueIdentifier()}.{$firstFile->getExtension()}";
-        $this->disk->put(
-            $fullPath,
-            ""
-        );
-
-        foreach ($files as /** @var ChunkedFile $file*/ $file) {
-            $chunkContent = $this->disk->readStream($file->getFullPath());
+        $pathInfo = pathinfo($paths[0]);
+        $fullPath = "{$pathInfo['dirname']}/$fileUniqueIdentifier.$fileExtension";
+        foreach ($paths as $path) {
+            $chunkContent = $this->disk->readStream($path);
 
             while ($buff = fread($chunkContent, 4096)) {
-                $this->disk->append($fullPath, $buff);
+                if ($this->disk->exists($fullPath)) {
+                    $this->disk->append($fullPath, $buff);
+                } else {
+                    $this->disk->put($fullPath, $buff);
+                }
             }
         }
 
+        $this->deleteChunkedFiles($paths);
+
         return new UnchunkedFile(
-            $firstFile->getPath(),
-            $firstFile->getFileUniqueIdentifier(),
-            $firstFile->getExtension(),
-            $this->disk,
-            $files
+            $pathInfo['dirname'],
+            $pathInfo['filename'],
+            $pathInfo['extension'],
+            $this->disk
         );
     }
 
-    public function deleteChunkedFiles(UnchunkedFile $unchunkedFile): bool
+    public function deleteChunkedFiles(array $unchunkedPaths): bool
     {
-        $paths = array();
-        foreach ($unchunkedFile->getChunkedFiles() as /** @var ChunkedFile $chunkedFile */ $chunkedFile) {
-            $paths[] = "{$chunkedFile->getPath()}/{$chunkedFile->getFilename()}.{$chunkedFile->getExtension()}";
-        }
-        return $this->disk->delete($paths);
+        Log::debug($unchunkedPaths);
+        return $this->disk->delete($unchunkedPaths);
     }
 }

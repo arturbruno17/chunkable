@@ -2,32 +2,43 @@
 
 namespace Posart\Chunkable;
 
-use Illuminate\Http\File;
-use League\Flysystem\Filesystem;
 
-class ChunkedFile extends File
+use Illuminate\Contracts\Filesystem\Filesystem;
+
+class ChunkedFile
 {
+    const CHUNKED_FILE_EXTENSION = 'chunk';
+
     private string $fileUniqueIdentifier;
+    private int $chunkPart;
+    private int $parts;
     private string $path;
     private string $filename;
-    private string $mimeType;
-    private string $extension;
     private Filesystem $disk;
 
-    public function __construct(string $fileUniqueIdentifier, string $path, string $filename, string $mimeType, string $extension, Filesystem $disk)
+    public function __construct(string $fileUniqueIdentifier, int $chunkPart, int $parts, string $path, string $filename, Filesystem $disk)
     {
-        parent::__construct($path . "/{{$filename}.{$extension}", false);
         $this->fileUniqueIdentifier = $fileUniqueIdentifier;
+        $this->chunkPart = $chunkPart;
+        $this->parts = $parts;
         $this->path = $path;
         $this->filename = $filename;
-        $this->mimeType = $mimeType;
-        $this->extension = $extension;
         $this->disk = $disk;
     }
 
     public function getFileUniqueIdentifier(): string
     {
         return $this->fileUniqueIdentifier;
+    }
+
+    public function getChunkPart(): int
+    {
+        return $this->chunkPart;
+    }
+
+    public function getParts(): int
+    {
+        return $this->parts;
     }
 
     public function getPath(): string
@@ -40,19 +51,9 @@ class ChunkedFile extends File
         return $this->filename;
     }
 
-    public function getMimeType(): string
-    {
-        return $this->mimeType;
-    }
-
-    public function getExtension(): string
-    {
-        return $this->extension;
-    }
-
     public function getFullPath(): string
     {
-        return "{$this->getPath()}/{$this->getFilename()}.{$this->getExtension()}}";
+        return "{$this->getPath()}/{$this->getFilename()}." . self::CHUNKED_FILE_EXTENSION;
     }
 
     public function getDisk(): Filesystem
