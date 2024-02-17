@@ -66,6 +66,7 @@ class ChunkUploadProvider extends ServiceProvider
 
             $paths = $this->rememberUploadedParts($chunked, $currentPart);
             if (count($paths)-1 == $parts) {
+                ksort($paths);
                 $unchunked = $storage->joinChunkedFiles($paths, $chunked->getFileUniqueIdentifier(), $request->file_extension);
                 $this->forgetUploadedParts($chunked->getFileUniqueIdentifier());
             }
@@ -76,7 +77,6 @@ class ChunkUploadProvider extends ServiceProvider
 
     private function rememberUploadedParts(ChunkedFile $file, int $currentPart): array
     {
-        Log::debug(json_encode(['file' => $file->getFilename(), 'part' => $file->getChunkPart(), 'parts' => $file->getParts()]));
         $uploadedParts = Cache::get("{$file->getFileUniqueIdentifier()}.uploaded_parts") ?? array();
         $uploadedParts[$currentPart] = $file->getFullPath();
         Cache::set("{$file->getFileUniqueIdentifier()}.uploaded_parts", $uploadedParts);
