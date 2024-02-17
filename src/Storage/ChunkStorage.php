@@ -36,17 +36,17 @@ class ChunkStorage extends AbstractStorage
     {
         $pathInfo = pathinfo($paths[0]);
         $fullPath = "{$pathInfo['dirname']}/$fileUniqueIdentifier.$fileExtension";
+        $stream = tmpfile();
+
         foreach ($paths as $path) {
             $chunkContent = $this->disk->readStream($path);
-
             while ($buff = fread($chunkContent, 4096)) {
-                if ($this->disk->exists($fullPath)) {
-                    $this->disk->append($fullPath, $buff);
-                } else {
-                    $this->disk->put($fullPath, $buff);
-                }
+                fwrite($stream, $buff);
             }
         }
+
+        $this->disk->writeStream($fullPath, $stream);
+        fclose($stream);
 
         $this->deleteChunkedFiles($paths);
 
@@ -60,7 +60,6 @@ class ChunkStorage extends AbstractStorage
 
     public function deleteChunkedFiles(array $unchunkedPaths): bool
     {
-        Log::debug($unchunkedPaths);
         return $this->disk->delete($unchunkedPaths);
     }
 }
