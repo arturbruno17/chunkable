@@ -21,6 +21,11 @@
         "illuminate/filesystem": "^10.43",
         "illuminate/validation": "*"
     },
+    "suggest": {
+        "league/flysystem-aws-s3-v3": "^3.0",
+        "league/flysystem-ftp": "^3.0",
+        "league/flysystem-sftp-v3": "^3.0"
+    },
     "extra": {
         "laravel": {
             "providers": [
